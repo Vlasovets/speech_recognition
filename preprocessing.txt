@@ -1,0 +1,37 @@
+					Data Preparation 
+
+Feature extraction:
+for p in /work/courses/T/S/89/5150/general/data/native_language/wav/*.wav; do ./SMILExtract -C config/IS13_ComParE.conf -I ${p} -O features/features_${$(basename $p)%.*}.csv; done
+
+Removing header:
+for p in features/*.csv; do sed -e '1,/@data/d' ${p} > ${p}_new && mv ${p}_new ${p}; done
+
+Replace unknown with feature names:
+for filename in features/*.csv ; do
+  replacement=$(echo $filename | sed -e 's,^.*/,,' -e 's,\.[^\.]*$,,')
+  [ -f "$filename" ] && sed -i "s,’unknown’,$replacement," "$filename"
+done
+
+Drop the questionmark:
+for filename in features/*.csv ; do
+  replacement=$(echo ${${filename#*_}%_*} | sed -e 's,^.*/,,' -e 's,\.[^\.]*$,,')
+  [ -f "$filename" ] && sed -i "s,?,$replacement," ""
+done
+
+Concenating all train, devel, test files:
+for i in devel train test
+    do
+      find . -type f -name "*${i}*" -exec cat '{}' + >"$i.csv"
+   done
+
+After matching with the correct labels using Python:
+Save only the header
+head -6380 features_train.csv > head_train.csv
+head -6380 features_devel.csv > head_devel.csv
+head -6380 features_test.csv > head_test.csv
+
+
+Add header to features:
+cat head_train.csv train.csv >> head_train.csv
+cat head_devel.csv devel.csv >> head_devel.csv
+cat head_test.csv test.csv >> head_test.csv
